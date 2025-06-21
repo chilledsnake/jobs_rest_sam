@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  Environment:
+    Type: String
+    Default: local
+    AllowedValues:
+      - local
+      - prod
+    Description: The environment to deploy (e.g., prod)
+  JobsTableParameter:
+    Type: String
+    Default: jobs-table
+  ApiDomain:
+    Type: String
+    Description: Root domain for the API (e.g., domain.com)
+  CertificateArn:
+    Type: String
+    Description: ARN of the ACM certificate for the API domain
+  HostedZoneId:
+    Type: String
+    Description: Route 53 hosted zone ID for the API domain
+
+Mappings:
+  EnvironmentConfig:
+    local:
+      Environment: local
+      PublicApiUrlSubDomainSuffix: local-public-api
+    prod:
+      Environment: prod
+      PublicApiUrlSubDomainSuffix: jobs-rest-api
+
+Resources:
+  FastApiLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: FastApiDependencies
+      ContentUri: layers/fastapi
+      CompatibleRuntimes:
+        - python3.13
+    Metadata:
+      BuildMethod: python3.13
+
+  ProdUsagePlan:
+    Type: 'AWS::ApiGateway::UsagePlan'
+    Properties:
+      ApiStages:
+        - ApiId: !Ref ServerlessApiGW
+          Stage: !Ref ServerlessApiGW.Stage
+      Quota:
+        Limit: 100
+        Period: DAY
+      Throttle:
+        BurstLimit: 1
+        RateLimit: 1
+      UsagePlanName: ProdUsagePlan
+
+  ServerlessApiGW:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      EndpointConfiguration:
+        Type: REGIONAL
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingBurstLimit: 1
+          ThrottlingRateLimit: 1
+      Domain:
+        DomainName: !Sub
+            - "${PublicApiUrlSubDomainSuffix}.${ApiDomain}"
+            - {
+                PublicApiUrlSubDomainSuffix: !FindInMap [EnvironmentConfig, !Ref Environment, PublicApiUrlSubDomainSuffix],
+                ApiDomain: !Ref ApiDomain
+            }
+        CertificateArn: !Ref CertificateArn
+        Route53:
+          HostedZoneId: !Ref HostedZoneId
+
+  JobsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.main.handler
+      Runtime: python3.13
+      CodeUri: ./
+      MemorySize: 128
+      Timeout: 15
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTableParameter
+      Layers:
+        - !Ref FastApiLayer
+      Events:
+        ExampleProjectInfoEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/info/
+            Method: GET
+        GetJobApiEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/jobs/{company}/{timestamp}/
+            Method: GET
+        ListJobsApiEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/jobs/
+            Method: GET
+        CreateJobApiEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/jobs/
+            Method: POST
+        UpdateJobApiEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/jobs/{company}/{timestamp}/
+            Method: PATCH
+        DeleteJobApiEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /v1/jobs/{company}/{timestamp}/
+            Method: DELETE
+      Environment:
+        Variables:
+          APP_ENV: !Ref Environment
+          APP_STACK_NAME : !Ref AWS::StackName
+          JOBS_TABLE_NAME: !Ref JobsTableParameter
+
+  SwaggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.main.handler
+      Runtime: python3.13
+      CodeUri: ./
+      MemorySize: 128
+      Timeout: 15
+      Layers:
+        - !Ref FastApiLayer
+      Events:
+        SwaggerApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /docs
+            Method: GET
+        RedocApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /redoc
+            Method: GET
+        OpenAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ServerlessApiGW
+            Path: /openapi.json
+            Method: GET
+      Environment:
+        Variables:
+          APP_ENV: !Ref Environment
+
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref JobsTableParameter
+      AttributeDefinitions:
+        - AttributeName: company
+          AttributeType: S
+        - AttributeName: time_stamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: company
+          KeyType: HASH
+        - AttributeName: time_stamp
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1

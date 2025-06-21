@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "sam-rest-api-example"
+version = "0.1.0"
+description = ""
+authors = ["chilledsnake <cwroblewski@o2.pl>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+pydantic = "^2.10.4"
+
+
+[tool.poetry.group.fastapi.dependencies]
+python-jose = "^3.3.0"
+cryptography = "^44.0.0"
+pydantic-settings = "^2.7.0"
+fastapi = "^0.115.6"
+mangum = "^0.19.0"
+boto3 = "^1.35.90"
+sentry-sdk = {extras = ["fastapi"], version = "^2.19.2"}
+
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.31.0"
+ruff = "^0.11.11"
+mypy = "^1.15.0"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+coverage = "^7.8.2"
+pytest-fastapi = "^0.1.0"
+fastapi = "^0.115.12"
+uvicorn = "^0.34.2"
+httpx = "^0.28.1"
+requests = "^2.32.4"
+moto = {extras = ["dynamodb"], version = "^5.1.6"}
+pytest-asyncio = "^1.0.0"
+mypy-boto3 = "^1.38.0"
+mypy-boto3-dynamodb = "^1.38.4"
+types-boto3 = "^1.38.41"
+isort = "^6.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
