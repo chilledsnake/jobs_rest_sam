@@ -34,7 +34,7 @@ DynamoDB is a fully managed NoSQL database service provided by Amazon Web Servic
 The `Makefile` provides targets to help with local development:
 
 ```sh
-make all       # Runs format, lint, and test
+make all       # Runs imports, format, typecheck, and test
 make test      # Runs all tests
 make format    # Formats code using ruff
 make imports   # Sorts imports using isort
