@@ -43,9 +43,9 @@ make typecheck # Checks for type errors using mypy
 
 ### Running the API Locally
 
-# Create a virtual environment
+# Create a virtual environment #Make sure that you are creating the virtual environment with Python 3.13.
 ```sh
-python -m venv .venv  #Make sure that you are creating the virtual environment with Python 3.13.
+python -m venv .venv
 ```
 
 # Activate the virtual environment
