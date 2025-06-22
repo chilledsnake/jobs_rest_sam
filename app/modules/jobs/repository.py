@@ -62,7 +62,7 @@ class JobRepository:
 
     async def upsert_job(self, data: JobSchema) -> None:
         """Update an existing job in the DynamoDB table."""
-        data_dict = data.model_dump()
+        data_dict = data.model_dump(exclude_unset=True)
         key = {
             self.PARTITION_KEY: data_dict.pop("company"),
             self.SORT_KEY: data_dict.pop("time_stamp"),

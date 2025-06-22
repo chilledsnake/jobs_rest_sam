@@ -18,7 +18,7 @@ from app.modules.jobs.schema import JobSchema
         pytest.param(
             "Test Company Insert",
             "Test Company Insert",
-            {"description": "Test"},
+            {"description": "Test", "salary": 1234},
             status.HTTP_200_OK,
             id="insert",
         ),
@@ -34,7 +34,11 @@ async def test_upsert_job(
 ):
     job_repository = JobRepository()
     job_repository.jobs_table.put_item(
-        Item={"company": "Test Company", "time_stamp": "2023-04-01T12:00:00Z"}
+        Item={
+            "company": "Test Company",
+            "time_stamp": "2023-04-01T12:00:00Z",
+            "salary": 1234,
+        }
     )
 
     response = client.patch(
@@ -42,6 +46,7 @@ async def test_upsert_job(
         json=data,
     )
     assert response.status_code == expected_http_status_code
-    assert await job_repository.get_job(company, timestamp) == JobSchema(
-        **data, company=company, time_stamp=timestamp
-    )
+    job = await job_repository.get_job(company, timestamp)
+    for key in data:
+        assert getattr(job, key) == data[key]
+    assert job.salary == 1234

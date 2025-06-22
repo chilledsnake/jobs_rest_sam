@@ -18,5 +18,9 @@ router = APIRouter()
 )
 async def upsert_job(company: str, time_stamp: str, data: UpdateJobSchema) -> None:
     await JobRepository().upsert_job(
-        JobSchema(**data.model_dump(), company=company, time_stamp=time_stamp)
+        JobSchema(
+            **data.model_dump(exclude_unset=True),
+            company=company,
+            time_stamp=time_stamp,
+        )
     )

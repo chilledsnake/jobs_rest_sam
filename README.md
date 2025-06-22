@@ -10,7 +10,7 @@ AWS SAM is a framework for building serverless applications. It provides a way t
 
 DynamoDB is a fully managed NoSQL database service provided by Amazon Web Services. It offers fast and predictable performance with seamless scalability. The API uses DynamoDB to store job data.
 
-* This repository does not contain local DynamoDB setup, if You want to run locally, you need to setup local service or use remote instance.
+* This repository does not contain local DynamoDB setup, if You want to run locally, you need to setup local DynamoDB instance.
 * For pytest setup, I use `moto` library to mock DynamoDB locally.
 
 ## Project Structure
@@ -44,9 +44,8 @@ make typecheck # Checks for type errors using mypy
 ### Running the API Locally
 
 # Create a virtual environment
-Make sure that you are creating the virtual environment with Python 3.13.
 ```sh
-python -m venv .venv
+python -m venv .venv  #Make sure that you are creating the virtual environment with Python 3.13.
 ```
 
 # Activate the virtual environment
