@@ -2,7 +2,6 @@ import pytest
 from fastapi import status
 
 from app.modules.jobs.repository import JobRepository
-from app.modules.jobs.schema import JobSchema
 
 
 @pytest.mark.parametrize(
