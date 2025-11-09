@@ -9,6 +9,8 @@ Parameters:
       - local
       - prod
     Description: The environment to deploy (e.g., prod)
+  AlarmEmailParameter:
+    Type: String
   JobsTableParameter:
     Type: String
     Default: jobs-table
@@ -45,9 +47,6 @@ Resources:
   ProdUsagePlan:
     Type: 'AWS::ApiGateway::UsagePlan'
     Properties:
-      ApiStages:
-        - ApiId: !Ref ServerlessApiGW
-          Stage: !Ref ServerlessApiGW.Stage
       Quota:
         Limit: 100
         Period: DAY
@@ -184,3 +183,38 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-alerts"
+      DisplayName: Jobs API Alerts
+      Subscription:
+        - Endpoint: !Ref AlarmEmailParameter
+          Protocol: email
+
+  GatewayAPIThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-apigw-throttle"
+      AlarmDescription: Alert when API Gateway requests are throttled (HTTP 429)
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref AWS::StackName
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+Outputs:
+  AlertTopicArn:
+    Description: ARN of SNS topic for alerts
+    Value: !Ref AlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-AlertTopic"
