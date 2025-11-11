@@ -3,7 +3,6 @@ from fastapi import APIRouter, status
 from app.api.v1.jobs.endpoints.update.schema import UpdateJobSchema
 from app.modules.jobs.repository import JobRepository
 from app.modules.jobs.schema import JobSchema
-from app.utils import NotFoundError
 
 router = APIRouter()
 

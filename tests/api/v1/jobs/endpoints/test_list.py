@@ -29,7 +29,7 @@ def test_list_jobs(mock_dynamodb, client, input_data, expected_http_status_code)
         JobRepository().jobs_table.put_item(Item=item)
 
     response = client.get(
-        f"/v1/jobs/",
+        "/v1/jobs/",
     )
     assert response.status_code == expected_http_status_code
     assert isinstance(response.json(), list)

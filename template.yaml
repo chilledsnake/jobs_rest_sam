@@ -4,31 +4,24 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   Environment:
     Type: String
-    Default: local
+    Default: dev
     AllowedValues:
-      - local
+      - dev
+      - preprod
       - prod
     Description: The environment to deploy (e.g., prod)
-  AlarmEmailParameter:
-    Type: String
-  JobsTableParameter:
-    Type: String
-    Default: jobs-table
   ApiDomain:
     Type: String
     Description: Root domain for the API (e.g., domain.com)
-  CertificateArn:
-    Type: String
-    Description: ARN of the ACM certificate for the API domain
-  HostedZoneId:
-    Type: String
-    Description: Route 53 hosted zone ID for the API domain
 
 Mappings:
   EnvironmentConfig:
-    local:
-      Environment: local
-      PublicApiUrlSubDomainSuffix: local-public-api
+    dev:
+      Environment: dev
+      PublicApiUrlSubDomainSuffix: dev-jobs-rest-api
+    preprod:
+      Environment: preprod
+      PublicApiUrlSubDomainSuffix: preprod-jobs-rest-api
     prod:
       Environment: prod
       PublicApiUrlSubDomainSuffix: jobs-rest-api
@@ -73,9 +66,9 @@ Resources:
                 PublicApiUrlSubDomainSuffix: !FindInMap [EnvironmentConfig, !Ref Environment, PublicApiUrlSubDomainSuffix],
                 ApiDomain: !Ref ApiDomain
             }
-        CertificateArn: !Ref CertificateArn
+        CertificateArn: '{{resolve:secretsmanager:examples/sam_api:SecretString:SSL_CERTIFICATE_ARN}}'
         Route53:
-          HostedZoneId: !Ref HostedZoneId
+          HostedZoneId: '{{resolve:secretsmanager:examples/sam_api:SecretString:HOSTED_ZONE_ID}}'
 
   JobsFunction:
     Type: AWS::Serverless::Function
@@ -87,7 +80,7 @@ Resources:
       Timeout: 15
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref JobsTableParameter
+            TableName: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
       Layers:
         - !Ref FastApiLayer
       Events:
@@ -131,7 +124,7 @@ Resources:
         Variables:
           APP_ENV: !Ref Environment
           APP_STACK_NAME : !Ref AWS::StackName
-          JOBS_TABLE_NAME: !Ref JobsTableParameter
+          JOBS_TABLE_NAME: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
 
   SwaggerFunction:
     Type: AWS::Serverless::Function
@@ -169,7 +162,7 @@ Resources:
   JobsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref JobsTableParameter
+      TableName: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
       AttributeDefinitions:
         - AttributeName: company
           AttributeType: S
@@ -190,7 +183,7 @@ Resources:
       TopicName: !Sub "${AWS::StackName}-alerts"
       DisplayName: Jobs API Alerts
       Subscription:
-        - Endpoint: !Ref AlarmEmailParameter
+        - Endpoint: '{{resolve:secretsmanager:examples/sam_api:SecretString:ADMIN_EMAIL}}'
           Protocol: email
 
   GatewayAPIThrottleAlarm:
