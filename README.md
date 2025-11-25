@@ -63,6 +63,62 @@ pip install poetry
 poetry install --no-root
 ```
 
+## Adding New Packages
+
+The project uses **Poetry** with two dependency groups:
+
+| Group | Purpose | File entry |
+|-------|---------|------------|
+| `fastapi` | Packages needed **at runtime** (included in the Lambda layer). | `[tool.poetry.group.fastapi.dependencies]` |
+| `dev`     | Development‑only tools (linters, test frameworks, type checkers). | `[tool.poetry.group.dev.dependencies]` |
+
+### 1️⃣ Add a package to the **FastAPI runtime** group
+
+```bash
+# Example: add `httpx` (HTTP client)
+poetry add httpx --group fastapi
+```
+
+- The dependency will appear under `[tool.poetry.group.fastapi.dependencies]` in `pyproject.toml`.
+- **After adding** a runtime package you must rebuild the Lambda layer (see *Updating the FastAPI Lambda Layer* above).
+
+### 2️⃣ Add a package to the **dev** group
+
+```bash
+# Example: add `black` as a formatter
+poetry add black --group dev
+```
+
+- The dependency will be listed under `[tool.poetry.group.dev.dependencies]`.
+- Dev packages are **not** shipped with the Lambda layer, so no extra build step is required.
+
+### 3️⃣ Re‑build the Lambda layer (if you added to `fastapi`)
+
+```bash
+poetry export \
+    -f requirements.txt \
+    --without-hashes \
+    --only fastapi \
+    -o layers/fastapi/requirements.txt
+
+sam build          # rebuilds the layer with the new deps
+```
+
+### 4️⃣ Verify the layer size (recommended)
+
+```bash
+du -sh .aws-sam/build/FastApiLayer/python
+# Aim for ≤ 250 MB (uncompressed) to stay under Lambda limits.
+```
+
+### 5️⃣ Deploy (if you want the new version in the cloud)
+
+```bash
+sam deploy
+```
+
+> **Tip:** Add `layers/fastapi/requirements.txt` to version control so the CI pipeline can rebuild the layer automatically whenever a PR modifies the `fastapi` dependency group.
+
 There are two ways to run the API locally:
 
 1. **Using AWS SAM:**
