@@ -6,25 +6,23 @@ TESTS_DIR := tests
 PYTHON ?= python3
 
 # Run full validation workflow
-all: imports format typecheck test
-
-test:
-	$(PYTHON) -m pytest
+all: format typecheck test
 
 format:
-	ruff format $(SRC_DIR) $(TESTS_DIR)
-
-imports:
-	isort $(SRC_DIR) $(TESTS_DIR)
+	ruff format $(SRC_DIR) $(TESTS_DIR) && ruff check --fix $(SRC_DIR) $(TESTS_DIR)
 
 typecheck:
 	mypy $(SRC_DIR)
+
+test:
+	$(PYTHON) -m pytest
 
 help:
 	@echo "Available targets:"
 	@echo "  all           - Run format, lint, and test"
 	@echo "  format        - Format code using black"
-	@echo "  help          - Show this help message"
+	@echo "  typecheck     - Run type checking with mypy"
 	@echo "  test          - Run all tests"
+	@echo "  help          - Show this help message"
 
-.PHONY: all test format typecheck help
+.PHONY: all format typecheck test help

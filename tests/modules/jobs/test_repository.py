@@ -1,5 +1,11 @@
+from unittest.mock import patch
+
+import pytest
+from botocore.exceptions import ClientError
+
 from app.modules.jobs.repository import JobRepository
 from app.modules.jobs.schema import JobBaseSchema, JobSchema
+from app.utils import ExternalServiceError
 
 
 async def test_create_and_get_job(mock_dynamodb):
@@ -112,3 +118,89 @@ async def test_delete_not_existing_job(mock_dynamodb):
         company="TestCompany", time_stamp="2023-10-01T12:00:00Z"
     )
     assert response is None
+
+
+async def test_create_job_client_error(mock_dynamodb):
+    job_repository = JobRepository()
+    job_data = {
+        "company": "TestCompany",
+        "time_stamp": "2023-10-01T12:00:00Z",
+        "description": "Sample Job",
+    }
+    job_base_schema = JobSchema(**job_data)
+
+    with patch.object(
+        job_repository.jobs_table,
+        "put_item",
+        side_effect=ClientError(
+            {"Error": {"Code": "ValidationException", "Message": "Error"}},
+            "PutItem",
+        ),
+    ):
+        with pytest.raises(ExternalServiceError):
+            await job_repository.create_job(job_base_schema)
+
+
+async def test_get_job_client_error(mock_dynamodb):
+    job_repository = JobRepository()
+
+    with patch.object(
+        job_repository.jobs_table,
+        "get_item",
+        side_effect=ClientError(
+            {"Error": {"Code": "ValidationException", "Message": "Error"}},
+            "GetItem",
+        ),
+    ):
+        with pytest.raises(ExternalServiceError):
+            await job_repository.get_job("TestCompany", "2023-10-01T12:00:00Z")
+
+
+async def test_list_jobs_client_error(mock_dynamodb):
+    job_repository = JobRepository()
+
+    with patch.object(
+        job_repository.jobs_table,
+        "scan",
+        side_effect=ClientError(
+            {"Error": {"Code": "ValidationException", "Message": "Error"}},
+            "Scan",
+        ),
+    ):
+        with pytest.raises(ExternalServiceError):
+            await job_repository.list_jobs()
+
+
+async def test_upsert_job_client_error(mock_dynamodb):
+    job_repository = JobRepository()
+    job_data = {
+        "company": "TestCompany",
+        "time_stamp": "2023-10-01T12:00:00Z",
+        "description": "Sample Job",
+    }
+
+    with patch.object(
+        job_repository.jobs_table,
+        "update_item",
+        side_effect=ClientError(
+            {"Error": {"Code": "ValidationException", "Message": "Error"}},
+            "UpdateItem",
+        ),
+    ):
+        with pytest.raises(ExternalServiceError):
+            await job_repository.upsert_job(JobSchema(**job_data))
+
+
+async def test_delete_job_client_error(mock_dynamodb):
+    job_repository = JobRepository()
+
+    with patch.object(
+        job_repository.jobs_table,
+        "delete_item",
+        side_effect=ClientError(
+            {"Error": {"Code": "ValidationException", "Message": "Error"}},
+            "DeleteItem",
+        ),
+    ):
+        with pytest.raises(ExternalServiceError):
+            await job_repository.delete_job("TestCompany", "2023-10-01T12:00:00Z")

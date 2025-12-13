@@ -77,7 +77,7 @@ Resources:
       Runtime: python3.13
       CodeUri: ./
       MemorySize: 128
-      Timeout: 15
+      Timeout: 5
       Policies:
         - DynamoDBCrudPolicy:
             TableName: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
@@ -133,7 +133,7 @@ Resources:
       Runtime: python3.13
       CodeUri: ./
       MemorySize: 128
-      Timeout: 15
+      Timeout: 5
       Layers:
         - !Ref FastApiLayer
       Events:
