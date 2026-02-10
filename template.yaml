@@ -7,7 +7,7 @@ Parameters:
     Default: dev
     AllowedValues:
       - dev
-      - preprod
+      - stage
       - prod
     Description: The environment to deploy (e.g., prod)
   ApiDomain:
@@ -19,12 +19,15 @@ Mappings:
     dev:
       Environment: dev
       PublicApiUrlSubDomainSuffix: dev-jobs-rest-api
-    preprod:
-      Environment: preprod
-      PublicApiUrlSubDomainSuffix: preprod-jobs-rest-api
+    stage:
+      Environment: stage
+      PublicApiUrlSubDomainSuffix: stage-jobs-rest-api
     prod:
       Environment: prod
       PublicApiUrlSubDomainSuffix: jobs-rest-api
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, "prod"]
 
 Resources:
   FastApiLayer:
@@ -78,9 +81,10 @@ Resources:
       CodeUri: ./
       MemorySize: 128
       Timeout: 5
+      AutoPublishAlias: live
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
+            TableName: !Ref JobsTable
       Layers:
         - !Ref FastApiLayer
       Events:
@@ -120,11 +124,16 @@ Resources:
             RestApiId: !Ref ServerlessApiGW
             Path: /v1/jobs/{company}/{timestamp}/
             Method: DELETE
+      DeploymentPreference:
+        Enabled: !If [IsProd, true, false]
+        Type: Canary10Percent10Minutes
+        Alarms:
+          - !Ref JobsFunctionCanaryErrorAlarm
       Environment:
         Variables:
           APP_ENV: !Ref Environment
           APP_STACK_NAME : !Ref AWS::StackName
-          JOBS_TABLE_NAME: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
+          JOBS_TABLE_NAME: !Ref JobsTable
 
   SwaggerFunction:
     Type: AWS::Serverless::Function
@@ -162,7 +171,7 @@ Resources:
   JobsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: '{{resolve:secretsmanager:examples/sam_api:SecretString:DYNAMO_DB_TABLE}}'
+      TableName: !Sub "jobs-table-${Environment}"
       AttributeDefinitions:
         - AttributeName: company
           AttributeType: S
@@ -176,6 +185,23 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+  JobsFunctionCanaryErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-canary-errors"
+      AlarmDescription: Rollback canary deployment if Lambda errors spike
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref JobsFunction
+      TreatMissingData: notBreaching
 
   AlertTopic:
     Type: AWS::SNS::Topic

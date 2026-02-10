@@ -1,9 +1,40 @@
 version = 0.1
-[default.deploy.parameters]
+
+[default.global.parameters]
+region = ""
+
+# --- Dev ---
+[dev.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
+s3_prefix = ""
 region = ""
-capabilities = "CAPABILITY_IAM"
+profile = ""
 confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"dev\" ApiDomain=\"\""
 image_repositories = []
-parameter_overrides = "Environment=\"\" ApiDomain=\"\" CertificateArn=\"\" HostedZoneId=\"\""
+
+# --- Stage ---
+[stage.deploy.parameters]
+stack_name = ""
+resolve_s3 = true
+s3_prefix = ""
+region = ""
+profile = ""
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"stage\" ApiDomain=\"\""
+image_repositories = []
+
+# --- Prod ---
+[prod.deploy.parameters]
+stack_name = ""
+resolve_s3 = true
+s3_prefix = ""
+region = ""
+profile = ""
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"prod\" ApiDomain=\"\""
+image_repositories = []

@@ -114,7 +114,7 @@ du -sh .aws-sam/build/FastApiLayer/python
 ### 5️⃣ Deploy (if you want the new version in the cloud)
 
 ```bash
-sam deploy
+sam deploy --config-env dev   # or stage / prod
 ```
 
 > **Tip:** Add `layers/fastapi/requirements.txt` to version control so the CI pipeline can rebuild the layer automatically whenever a PR modifies the `fastapi` dependency group.
@@ -133,24 +133,68 @@ There are two ways to run the API locally:
 
 ## Deployment
 
-To deploy the API using AWS SAM, follow these steps:
+The project supports three environments: **dev**, **stage**, and **prod**. Each has its own stack, DynamoDB table, and API subdomain, configured via `samconfig.toml`.
 
-1. Ensure you have the necessary permissions to create and manage AWS resources.
-2. Configure your AWS credentials.
-3. Deploy the stack:
+### Configuration
+
+1. Copy the template to create your config file:
    ```sh
-   sam build
-   sam deploy --guided
+   cp samconfig.template.toml samconfig.toml
    ```
 
-Follow the prompts to provide required parameters such as the environment, API domain, certificate ARN, and hosted zone ID.
+2. Fill in the empty values for each environment (`[dev.deploy.parameters]`, `[stage.deploy.parameters]`, `[prod.deploy.parameters]`):
+
+   | Field | Description | Example |
+   |-------|-------------|---------|
+   | `stack_name` | CloudFormation stack name | `my-app-dev` |
+   | `s3_prefix` | S3 prefix for deployment artifacts | `my-app-dev` |
+   | `region` | AWS region | `eu-central-1` |
+   | `profile` | AWS CLI profile name | `default` |
+   | `ApiDomain` | Your root domain for the API | `example.com` |
+
+   The `Environment` parameter is already pre-filled per section.
+
+3. Make sure the following secrets exist in AWS Secrets Manager under `examples/sam_api`:
+   - `SSL_CERTIFICATE_ARN` — ACM certificate ARN covering your API subdomains
+   - `HOSTED_ZONE_ID` — Route53 hosted zone ID for your domain
+   - `ADMIN_EMAIL` — Email address for CloudWatch alarm notifications
+
+### Deploy to an environment
+
+```sh
+sam build
+sam deploy --config-env dev
+sam deploy --config-env stage
+sam deploy --config-env prod
+```
+
+### Environment details
+
+Each environment gets its own isolated resources:
+
+| Resource | Naming pattern |
+|----------|---------------|
+| CloudFormation stack | `<stack_name>` from samconfig.toml |
+| DynamoDB table | `jobs-table-<env>` (e.g. `jobs-table-dev`) |
+| API subdomain | `<env>-jobs-rest-api.<your-domain>` (prod: `jobs-rest-api.<your-domain>`) |
+
+### Canary deployments (prod only)
+
+Production deployments use a **blue/green canary strategy** via AWS CodeDeploy (`Canary10Percent10Minutes`):
+
+1. 10% of traffic is shifted to the new Lambda version
+2. The deployment is monitored for 10 minutes
+3. If no errors are detected, 100% of traffic shifts to the new version
+4. If the `JobsFunctionCanaryErrorAlarm` triggers, CodeDeploy **automatically rolls back**
+
+Dev and stage deployments are instant (no canary).
 
 ## Public API
 
-- **API Endpoint:** `https://jobs-rest-api.ownspace.cloud`
+- **API Endpoint:** `https://jobs-rest-api.<your-domain>`
 - **Interactive OpenAPI Documentation:**
-  - Swagger UI: `https://jobs-rest-api.ownspace.cloud/docs`
-  - ReDoc: `https://jobs-rest-api.ownspace.cloud/redoc`
+  - Swagger UI: `https://jobs-rest-api.<your-domain>/docs`
+  - ReDoc: `https://jobs-rest-api.<your-domain>/redoc`
 
 ## API Endpoints
 

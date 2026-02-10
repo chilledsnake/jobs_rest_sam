@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -17,10 +17,16 @@ class JobRepository:
     PARTITION_KEY = "company"
     SORT_KEY = "time_stamp"
 
-    def __init__(self):
-        self.jobs_table = boto3.resource("dynamodb", region_name="eu-central-1").Table(
-            self.JOBS_DATA_TABLE_NAME
-        )
+    _instance: Optional["JobRepository"] = None
+    jobs_table: Any
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.jobs_table = boto3.resource(
+                "dynamodb", region_name="eu-central-1"
+            ).Table(cls.JOBS_DATA_TABLE_NAME)
+        return cls._instance
 
     async def create_job(self, data: JobSchema) -> None:
         """Create a new job in the DynamoDB table."""
