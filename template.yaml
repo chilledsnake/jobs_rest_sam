@@ -40,17 +40,6 @@ Resources:
     Metadata:
       BuildMethod: python3.13
 
-  ProdUsagePlan:
-    Type: 'AWS::ApiGateway::UsagePlan'
-    Properties:
-      Quota:
-        Limit: 100
-        Period: DAY
-      Throttle:
-        BurstLimit: 1
-        RateLimit: 1
-      UsagePlanName: ProdUsagePlan
-
   ServerlessApiGW:
     Type: AWS::Serverless::Api
     Properties:
@@ -212,17 +201,17 @@ Resources:
         - Endpoint: '{{resolve:secretsmanager:examples/sam_api:SecretString:ADMIN_EMAIL}}'
           Protocol: email
 
-  GatewayAPIThrottleAlarm:
+  GatewayAPI4XXAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-apigw-throttle"
-      AlarmDescription: Alert when API Gateway requests are throttled (HTTP 429)
+      AlarmName: !Sub "${AWS::StackName}-apigw-4xx"
+      AlarmDescription: Alert when API Gateway 4XX error rate is high
       MetricName: 4XXError
       Namespace: AWS/ApiGateway
       Statistic: Sum
-      Period: 60
+      Period: 300
       EvaluationPeriods: 1
-      Threshold: 1
+      Threshold: 20
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
