@@ -14,5 +14,5 @@ router = APIRouter()
     },
 )
 async def delete_job(company: str, time_stamp: str) -> None:
-    """Endpoint to create a new job"""
+    """Endpoint to delete a job"""
     await JobRepository().delete_job(company=company, time_stamp=time_stamp)

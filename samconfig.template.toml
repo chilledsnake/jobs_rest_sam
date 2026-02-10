@@ -2,39 +2,31 @@ version = 0.1
 
 [default.global.parameters]
 region = ""
+profile = ""
 
 # --- Dev ---
 [dev.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
 s3_prefix = ""
-region = ""
-profile = ""
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Environment=\"dev\" ApiDomain=\"\""
-image_repositories = []
 
 # --- Stage ---
 [stage.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
 s3_prefix = ""
-region = ""
-profile = ""
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Environment=\"stage\" ApiDomain=\"\""
-image_repositories = []
 
 # --- Prod ---
 [prod.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
 s3_prefix = ""
-region = ""
-profile = ""
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Environment=\"prod\" ApiDomain=\"\""
-image_repositories = []
