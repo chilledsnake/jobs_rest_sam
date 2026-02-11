@@ -11,7 +11,7 @@ AWS SAM is a framework for building serverless applications. It provides a way t
 DynamoDB is a fully managed NoSQL database service provided by Amazon Web Services. It offers fast and predictable performance with seamless scalability. The API uses DynamoDB to store job data.
 
 * This repository does not contain local DynamoDB setup, if You want to run locally, you need to setup local DynamoDB instance.
-* For pytest setup, I use `moto` library to mock DynamoDB locally.
+* For pytest setup, I use `aiomoto` library to mock DynamoDB locally.
 
 ## Project Structure
 
@@ -34,10 +34,9 @@ DynamoDB is a fully managed NoSQL database service provided by Amazon Web Servic
 The `Makefile` provides targets to help with local development:
 
 ```sh
-make all       # Runs imports, format, typecheck, and test
+make all       # Runs format, typecheck, and test
 make test      # Runs all tests
 make format    # Formats code using ruff
-make imports   # Sorts imports using isort
 make typecheck # Checks for type errors using mypy
 ```
 
@@ -142,14 +141,21 @@ The project supports three environments: **dev**, **stage**, and **prod**. Each 
    cp samconfig.template.toml samconfig.toml
    ```
 
-2. Fill in the empty values for each environment (`[dev.deploy.parameters]`, `[stage.deploy.parameters]`, `[prod.deploy.parameters]`):
+2. Fill in the empty values for each environment:
+
+   **`[<env>.global.parameters]`** — AWS region and CLI profile:
+
+   | Field | Description | Example |
+   |-------|-------------|---------|
+   | `region` | AWS region | `eu-central-1` |
+   | `profile` | AWS CLI profile name | `default` |
+
+   **`[<env>.deploy.parameters]`** — Stack and deployment settings:
 
    | Field | Description | Example |
    |-------|-------------|---------|
    | `stack_name` | CloudFormation stack name | `my-app-dev` |
    | `s3_prefix` | S3 prefix for deployment artifacts | `my-app-dev` |
-   | `region` | AWS region | `eu-central-1` |
-   | `profile` | AWS CLI profile name | `default` |
    | `ApiDomain` | Your root domain for the API | `example.com` |
 
    The `Environment` parameter is already pre-filled per section.
@@ -180,10 +186,10 @@ Each environment gets its own isolated resources:
 
 ### Canary deployments (prod only)
 
-Production deployments use a **blue/green canary strategy** via AWS CodeDeploy (`Canary10Percent10Minutes`):
+Production deployments use a **blue/green canary strategy** via AWS CodeDeploy (`Canary10Percent5Minutes`):
 
 1. 10% of traffic is shifted to the new Lambda version
-2. The deployment is monitored for 10 minutes
+2. The deployment is monitored for 5 minutes
 3. If no errors are detected, 100% of traffic shifts to the new version
 4. If the `JobsFunctionCanaryErrorAlarm` triggers, CodeDeploy **automatically rolls back**
 

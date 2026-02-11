@@ -20,7 +20,7 @@ test:
 help:
 	@echo "Available targets:"
 	@echo "  all           - Run format, lint, and test"
-	@echo "  format        - Format code using black"
+	@echo "  format        - Format code using ruff"
 	@echo "  typecheck     - Run type checking with mypy"
 	@echo "  test          - Run all tests"
 	@echo "  help          - Show this help message"
