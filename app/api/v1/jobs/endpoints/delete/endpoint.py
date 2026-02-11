@@ -1,5 +1,6 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.modules.jobs.dependencies import get_job_repository
 from app.modules.jobs.repository import JobRepository
 
 router = APIRouter()
@@ -13,6 +14,10 @@ router = APIRouter()
         503: {"description": "Service Unavailable"},
     },
 )
-async def delete_job(company: str, time_stamp: str) -> None:
+async def delete_job(
+    company: str,
+    time_stamp: str,
+    repo: JobRepository = Depends(get_job_repository),
+) -> None:
     """Endpoint to delete a job"""
-    await JobRepository().delete_job(company=company, time_stamp=time_stamp)
+    await repo.delete_job(company=company, time_stamp=time_stamp)

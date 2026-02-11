@@ -115,7 +115,7 @@ Resources:
             Method: DELETE
       DeploymentPreference:
         Enabled: !If [IsProd, true, false]
-        Type: Canary10Percent10Minutes
+        Type: Canary10Percent5Minutes
         Alarms:
           - !Ref JobsFunctionCanaryErrorAlarm
       Environment:

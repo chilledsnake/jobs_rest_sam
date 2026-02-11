@@ -1,7 +1,7 @@
-import boto3
+import aioboto3
 import pytest
 from fastapi.testclient import TestClient
-from moto import mock_aws
+from aiomoto import mock_aws as mock_aws_async
 
 from app.main import app
 
@@ -13,20 +13,26 @@ def client():
 
 
 @pytest.fixture(scope="function")
-def mock_dynamodb(request):
-    with mock_aws():
-        dynamodb = boto3.resource("dynamodb", region_name="eu-central-1")
+async def mock_dynamodb(request):
+    from app.modules.jobs import repository
 
-        dynamodb.create_table(
-            TableName="jobs-table",
-            KeySchema=[
-                {"AttributeName": "company", "KeyType": "HASH"},
-                {"AttributeName": "time_stamp", "KeyType": "RANGE"},
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "company", "AttributeType": "S"},
-                {"AttributeName": "time_stamp", "AttributeType": "S"},
-            ],
-            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-        )
-        yield
+    # Reset singleton so each test gets a fresh repository
+    repository.JobRepository._instance = None
+
+    with mock_aws_async():
+        async with aioboto3.Session().resource(
+            "dynamodb", region_name="eu-central-1"
+        ) as dynamodb:
+            await dynamodb.create_table(
+                TableName="jobs-table",
+                KeySchema=[
+                    {"AttributeName": "company", "KeyType": "HASH"},
+                    {"AttributeName": "time_stamp", "KeyType": "RANGE"},
+                ],
+                AttributeDefinitions=[
+                    {"AttributeName": "company", "AttributeType": "S"},
+                    {"AttributeName": "time_stamp", "AttributeType": "S"},
+                ],
+                ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+            )
+            yield

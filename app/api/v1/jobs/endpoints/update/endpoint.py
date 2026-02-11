@@ -1,6 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from app.api.v1.jobs.endpoints.update.schema import UpdateJobSchema
+from app.modules.jobs.dependencies import get_job_repository
 from app.modules.jobs.repository import JobRepository
 from app.modules.jobs.schema import JobSchema
 
@@ -15,8 +16,13 @@ router = APIRouter()
     },
     description="Update or insert a job record. If the record does not exist, it will be inserted.",
 )
-async def upsert_job(company: str, time_stamp: str, data: UpdateJobSchema) -> None:
-    await JobRepository().upsert_job(
+async def upsert_job(
+    company: str,
+    time_stamp: str,
+    data: UpdateJobSchema,
+    repo: JobRepository = Depends(get_job_repository),
+) -> None:
+    await repo.upsert_job(
         JobSchema(
             **data.model_dump(exclude_unset=True),
             company=company,

@@ -2,6 +2,7 @@ import pytest
 from fastapi import status
 
 from app.modules.jobs.repository import JobRepository
+from app.modules.jobs.schema import JobSchema
 
 
 @pytest.mark.parametrize(
@@ -31,13 +32,13 @@ async def test_upsert_job(
     data,
     expected_http_status_code,
 ):
-    job_repository = JobRepository()
-    job_repository.jobs_table.put_item(
-        Item={
-            "company": "Test Company",
-            "time_stamp": "2023-04-01T12:00:00Z",
-            "salary": 1234,
-        }
+    job_repository = await JobRepository.create()
+    await job_repository.create_job(
+        JobSchema(
+            company="Test Company",
+            time_stamp="2023-04-01T12:00:00Z",
+            salary=1234,
+        )
     )
 
     response = client.patch(

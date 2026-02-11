@@ -1,7 +1,8 @@
 from typing import List
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.modules.jobs.dependencies import get_job_repository
 from app.modules.jobs.repository import JobRepository
 from app.modules.jobs.schema import JobBaseSchema
 
@@ -18,5 +19,7 @@ router = APIRouter()
     },
     description="Endpoint to list all jobs",
 )
-async def list_jobs() -> List[JobBaseSchema | None]:
-    return await JobRepository().list_jobs()
+async def list_jobs(
+    repo: JobRepository = Depends(get_job_repository),
+) -> List[JobBaseSchema | None]:
+    return await repo.list_jobs()

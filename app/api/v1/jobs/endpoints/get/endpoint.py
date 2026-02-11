@@ -1,5 +1,6 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.modules.jobs.dependencies import get_job_repository
 from app.modules.jobs.repository import JobRepository
 from app.modules.jobs.schema import JobSchema
 from app.utils import NotFoundError
@@ -18,7 +19,11 @@ router = APIRouter()
     },
     description="Retrieve a job by company and timestamp",
 )
-async def get_job(company: str, time_stamp: str) -> JobSchema:
-    if job := await JobRepository().get_job(company=company, time_stamp=time_stamp):
+async def get_job(
+    company: str,
+    time_stamp: str,
+    repo: JobRepository = Depends(get_job_repository),
+) -> JobSchema:
+    if job := await repo.get_job(company=company, time_stamp=time_stamp):
         return job
     raise NotFoundError()

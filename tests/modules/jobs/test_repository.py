@@ -9,7 +9,7 @@ from app.utils import ExternalServiceError
 
 
 async def test_create_and_get_job(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -25,7 +25,7 @@ async def test_create_and_get_job(mock_dynamodb):
 
 async def test_get_job_not_found(mock_dynamodb):
     assert (
-        await JobRepository().get_job(
+        await (await JobRepository.create()).get_job(
             company="not_existing_company", time_stamp="not_existing_time_stamp"
         )
         is None
@@ -33,7 +33,7 @@ async def test_get_job_not_found(mock_dynamodb):
 
 
 async def test_list_jobs(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data1 = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -55,7 +55,7 @@ async def test_list_jobs(mock_dynamodb):
 
 
 async def test_update_and_get_job(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -76,7 +76,7 @@ async def test_update_and_get_job(mock_dynamodb):
 
 
 async def test_update_not_found_created(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     await job_repository.upsert_job(
         JobSchema(
             company="TestCompany",
@@ -90,7 +90,7 @@ async def test_update_not_found_created(mock_dynamodb):
 
 
 async def test_delete_job(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -111,7 +111,7 @@ async def test_delete_job(mock_dynamodb):
 
 
 async def test_delete_not_existing_job(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
 
     await job_repository.delete_job("TestCompany", "2023-10-01T12:00:00Z")
     response = await job_repository.get_job(
@@ -121,7 +121,7 @@ async def test_delete_not_existing_job(mock_dynamodb):
 
 
 async def test_create_job_client_error(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -142,7 +142,7 @@ async def test_create_job_client_error(mock_dynamodb):
 
 
 async def test_get_job_client_error(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
 
     with patch.object(
         job_repository.jobs_table,
@@ -157,7 +157,7 @@ async def test_get_job_client_error(mock_dynamodb):
 
 
 async def test_list_jobs_client_error(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
 
     with patch.object(
         job_repository.jobs_table,
@@ -172,7 +172,7 @@ async def test_list_jobs_client_error(mock_dynamodb):
 
 
 async def test_upsert_job_client_error(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
     job_data = {
         "company": "TestCompany",
         "time_stamp": "2023-10-01T12:00:00Z",
@@ -192,7 +192,7 @@ async def test_upsert_job_client_error(mock_dynamodb):
 
 
 async def test_delete_job_client_error(mock_dynamodb):
-    job_repository = JobRepository()
+    job_repository = await JobRepository.create()
 
     with patch.object(
         job_repository.jobs_table,

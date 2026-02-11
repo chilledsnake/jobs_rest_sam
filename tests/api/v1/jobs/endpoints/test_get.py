@@ -27,7 +27,7 @@ from app.modules.jobs.schema import JobSchema
         ),
     ],
 )
-def test_get_job(
+async def test_get_job(
     mock_dynamodb,
     client,
     company,
@@ -35,9 +35,9 @@ def test_get_job(
     expected_http_status_code,
     expected_output,
 ):
-    job_repository = JobRepository()
-    job_repository.jobs_table.put_item(
-        Item={"company": "Test Company", "time_stamp": "2023-04-01T12:00:00Z"}
+    job_repository = await JobRepository.create()
+    await job_repository.create_job(
+        JobSchema(company="Test Company", time_stamp="2023-04-01T12:00:00Z")
     )
 
     response = client.get(

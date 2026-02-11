@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 from app.modules.jobs.repository import JobRepository
-from app.modules.jobs.schema import JobBaseSchema
+from app.modules.jobs.schema import JobBaseSchema, JobSchema
 
 
 @pytest.mark.parametrize(
@@ -23,10 +23,9 @@ from app.modules.jobs.schema import JobBaseSchema
         ),
     ],
 )
-def test_list_jobs(mock_dynamodb, client, input_data, expected_http_status_code):
-    # Insert test data into the database
+async def test_list_jobs(mock_dynamodb, client, input_data, expected_http_status_code):
     for item in input_data:
-        JobRepository().jobs_table.put_item(Item=item)
+        await (await JobRepository.create()).create_job(JobSchema(**item))
 
     response = client.get(
         "/v1/jobs/",
