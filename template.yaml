@@ -114,8 +114,7 @@ Resources:
             Path: /v1/jobs/{company}/{timestamp}/
             Method: DELETE
       DeploymentPreference:
-        Enabled: !If [IsProd, true, false]
-        Type: Canary10Percent5Minutes
+        Type: !If [IsProd, Canary10Percent5Minutes, AllAtOnce]
         Alarms:
           - !Ref JobsFunctionCanaryErrorAlarm
       Environment:

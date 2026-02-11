@@ -1,10 +1,10 @@
 version = 0.1
 
-[default.global.parameters]
+# --- Dev ---
+[dev.global.parameters]
 region = ""
 profile = ""
 
-# --- Dev ---
 [dev.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
@@ -14,6 +14,10 @@ capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Environment=\"dev\" ApiDomain=\"\""
 
 # --- Stage ---
+[stage.global.parameters]
+region = ""
+profile = ""
+
 [stage.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
@@ -23,6 +27,10 @@ capabilities = "CAPABILITY_IAM"
 parameter_overrides = "Environment=\"stage\" ApiDomain=\"\""
 
 # --- Prod ---
+[prod.global.parameters]
+region = ""
+profile = ""
+
 [prod.deploy.parameters]
 stack_name = ""
 resolve_s3 = true
